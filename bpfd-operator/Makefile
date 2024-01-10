@@ -47,10 +47,10 @@ ifeq ($(USE_IMAGE_DIGESTS), true)
 endif
 
 # Image URL to use all building/pushing image targets
-BPFD_IMG ?= quay.io/bpfd/bpfd:latest
-BPFD_AGENT_IMG ?= quay.io/bpfd/bpfd-agent:latest
-BPFD_OPERATOR_IMG ?= quay.io/bpfd/bpfd-operator:latest
-BPFD_OPERATOR_BUNDLE_IMG ?= quay.io/bpfd/bpfd-operator-bundle:latest
+BPFD_IMG ?= quay.io/mtahhan/bpfd:latest
+BPFD_AGENT_IMG ?= quay.io/mtahhan/bpfd-agent:latest
+BPFD_OPERATOR_IMG ?= quay.io/mtahhan/bpfd-operator:latest
+BPFD_OPERATOR_BUNDLE_IMG ?= quay.io/mtahhan/bpfd-operator-bundle:latest
 KIND_CLUSTER_NAME ?= bpfd-deployment
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -233,13 +233,13 @@ test-integration: ## Run Integration tests.
 	GOFLAGS="-tags=integration_tests" go test -race -v ./test/integration/...
 
 ## The physical bundle is no longer tracked in git since it should be considered
-## and treated as a release artifact, rather than something that's updated 
+## and treated as a release artifact, rather than something that's updated
 ## as part of a pull request.
 ## See https://github.com/operator-framework/operator-sdk/issues/6285.
 .PHONY: bundle
 bundle: operator-sdk generate kustomize manifests ## Generate bundle manifests and metadata, then validate generated files.
-	cd config/bpfd-operator-deployment && $(KUSTOMIZE) edit set image quay.io/bpfd/bpfd-operator=${BPFD_OPERATOR_IMG}
-	cd config/bpfd-deployment && $(KUSTOMIZE) edit set image quay.io/bpfd/bpfd=${BPFD_IMG} && $(KUSTOMIZE) edit set image quay.io/bpfd/bpfd-agent=${BPFD_AGENT_IMG}
+	cd config/bpfd-operator-deployment && $(KUSTOMIZE) edit set image quay.io/mtahhan/bpfd-operator=${BPFD_OPERATOR_IMG}
+	cd config/bpfd-deployment && $(KUSTOMIZE) edit set image quay.io/mtahhan/bpfd=${BPFD_IMG} && $(KUSTOMIZE) edit set image quay.io/mtahhan/bpfd-agent=${BPFD_AGENT_IMG}
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
@@ -326,8 +326,8 @@ setup-kind: ## Setup Kind cluster
 ## Default deploy target is KIND based with its CSI driver initialized.
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy bpfd-operator to the K8s cluster specified in ~/.kube/config with the csi driver initialized.
-	cd config/bpfd-operator-deployment && $(KUSTOMIZE) edit set image quay.io/bpfd/bpfd-operator=${BPFD_OPERATOR_IMG}
-	cd config/bpfd-deployment && $(KUSTOMIZE) edit set image quay.io/bpfd/bpfd=${BPFD_IMG} && $(KUSTOMIZE) edit set image quay.io/bpfd/bpfd-agent=${BPFD_AGENT_IMG}
+	cd config/bpfd-operator-deployment && $(KUSTOMIZE) edit set image quay.io/mtahhan/bpfd-operator=${BPFD_OPERATOR_IMG}
+	cd config/bpfd-deployment && $(KUSTOMIZE) edit set image quay.io/mtahhan/bpfd=${BPFD_IMG} && $(KUSTOMIZE) edit set image quay.io/mtahhan/bpfd-agent=${BPFD_AGENT_IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
@@ -346,8 +346,8 @@ run-on-kind: kustomize setup-kind build-images load-images-kind deploy ## Kind D
 
 .PHONY: deploy-openshift
 deploy-openshift: manifests kustomize ## Deploy bpfd-operator to the Openshift cluster specified in ~/.kube/config.
-	cd config/bpfd-operator-deployment && $(KUSTOMIZE) edit set image quay.io/bpfd/bpfd-operator=${BPFD_OPERATOR_IMG}
-	cd config/bpfd-deployment && $(KUSTOMIZE) edit set image quay.io/bpfd/bpfd=${BPFD_IMG} && $(KUSTOMIZE) edit set image quay.io/bpfd/bpfd-agent=${BPFD_AGENT_IMG}
+	cd config/bpfd-operator-deployment && $(KUSTOMIZE) edit set image quay.io/mtahhan/bpfd-operator=${BPFD_OPERATOR_IMG}
+	cd config/bpfd-deployment && $(KUSTOMIZE) edit set image quay.io/mtahhan/bpfd=${BPFD_IMG} && $(KUSTOMIZE) edit set image quay.io/mtahhan/bpfd-agent=${BPFD_AGENT_IMG}
 	$(KUSTOMIZE) build config/openshift | kubectl apply -f -
 
 .PHONY: undeploy-openshift

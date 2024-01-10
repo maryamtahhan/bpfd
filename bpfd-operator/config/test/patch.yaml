@@ -4,6 +4,6 @@ metadata:
   name: config
   namespace: kube-system
 data:
-  bpfd.agent.image: quay.io/bpfd/bpfd-agent:int-test
-  bpfd.image: quay.io/bpfd/bpfd:int-test
+  bpfd.agent.image: quay.io/mtahhan/bpfd-agent:int-test
+  bpfd.image: quay.io/mtahhan/bpfd:int-test
   bpfd.log.level: debug

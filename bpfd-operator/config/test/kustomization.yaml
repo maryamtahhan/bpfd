@@ -44,6 +44,6 @@ resources:
   - ../bpfd-deployment
   - ../bpfd-operator-deployment
 images:
-  - name: quay.io/bpfd/bpfd-operator
-    newName: quay.io/bpfd/bpfd-operator
+  - name: quay.io/mtahhan/bpfd-operator
+    newName: quay.io/mtahhan/bpfd-operator
     newTag: int-test

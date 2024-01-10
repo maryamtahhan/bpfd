@@ -58,7 +58,7 @@ spec:
               mountPropagation: Bidirectional
       containers:
         - name: bpfd
-          image: quay.io/bpfd/bpfd:latest
+          image: quay.io/mtahhan/bpfd:latest
           args: [--csi-support]
           securityContext:
             privileged: true
@@ -103,8 +103,11 @@ spec:
               name: tmp-dir
         - name: bpfd-agent
           command: [/bpfd-agent]
-          image: quay.io/bpfd/bpfd-agent:latest
-          imagePullPolicy: IfNotPresent
+          args:
+            - "--health-probe-bind-address=:8091"
+            - "--metrics-bind-address=127.0.0.1:8090"
+          image: quay.io/mtahhan/bpfd-agent:latest
+          imagePullPolicy: Never
           env:
             - name: KUBE_NODE_NAME
               valueFrom:

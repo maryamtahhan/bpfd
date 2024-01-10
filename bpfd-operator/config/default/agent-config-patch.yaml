@@ -8,7 +8,7 @@ data:
   bpfd.agent.image: quay.io/mtahhan/bpfd-agent:latest
   bpfd.image: quay.io/mtahhan/bpfd:latest
   ## Can be set to "info", "debug", or "trace"
-  bpfd.agent.log.level: "info"
+  bpfd.agent.log.level: "debug"
   ## See https://docs.rs/env_logger/latest/env_logger/ for configuration options
   bpfd.log.level: "info"
   ## Must be configured at startup

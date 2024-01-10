@@ -87,12 +87,14 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	setupLog.Info("ABOUT TO CALL NEW MANAGER");
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         false,
+		Scheme: scheme,
+		MetricsBindAddress:     ":8090",
+		Port: 9443,
+		HealthProbeBindAddress: ":8091",
+		LeaderElection: false,
 		// Specify that Secrets's should not be cached.
 		ClientDisableCacheFor: []client.Object{&v1.Secret{}},
 	})

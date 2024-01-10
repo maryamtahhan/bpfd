@@ -3,9 +3,9 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- name: quay.io/bpfd/bpfd
-  newName: quay.io/bpfd/bpfd
+- name: quay.io/mtahhan/bpfd
+  newName: quay.io/mtahhan/bpfd
   newTag: latest
-- name: quay.io/bpfd/bpfd-agent
-  newName: quay.io/bpfd/bpfd-agent
+- name: quay.io/mtahhan/bpfd-agent
+  newName: quay.io/mtahhan/bpfd-agent
   newTag: latest
