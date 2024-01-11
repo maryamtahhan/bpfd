@@ -47,10 +47,11 @@ ifeq ($(USE_IMAGE_DIGESTS), true)
 endif
 
 # Image URL to use all building/pushing image targets
-BPFMAN_IMG ?= quay.io/bpfman/bpfman:latest
-BPFMAN_AGENT_IMG ?= quay.io/bpfman/bpfman-agent:latest
-BPFMAN_OPERATOR_IMG ?= quay.io/bpfman/bpfman-operator:latest
-BPFMAN_OPERATOR_BUNDLE_IMG ?= quay.io/bpfman/bpfman-operator-bundle:latest
+REGISTRY ?= quay.io/bpfman
+BPFMAN_IMG ?= $(REGISTRY)/bpfman:latest
+BPFMAN_AGENT_IMG ?= $(REGISTRY)/bpfman-agent:latest
+BPFMAN_OPERATOR_IMG ?= $(REGISTRY)/bpfman-operator:latest
+BPFMAN_OPERATOR_BUNDLE_IMG ?= $(REGISTRY)/bpfman-operator-bundle:latest
 KIND_CLUSTER_NAME ?= bpfman-deployment
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -108,6 +109,7 @@ CLIENT_GEN ?= $(LOCALBIN)/client-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CM_VERIFIER ?= $(LOCALBIN)/cm-verifier
 OPERATOR_SDK ?= $(LOCALBIN)/operator-sdk
+NO-CACHE ?=
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
@@ -119,6 +121,22 @@ KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/k
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
 $(KUSTOMIZE): $(LOCALBIN)
 	test -s $(LOCALBIN)/kustomize || { curl -Ss $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
+
+.PHONY: local-registry ## Create a local registry for bpfman images
+local-registry:
+ifeq ($(shell docker container inspect -f '{{.State.Running}}' bpfman-registry), true)
+	@echo "registry is already running"
+else
+	docker run -d -p 5000:5000 --restart=always --name bpfman-registry registry:2
+endif
+
+.PHONY: clean-local-registry
+clean-local-registry: ## Delete the local registry for bpfman images
+ifeq ($(shell docker container inspect -f '{{.State.Running}}' bpfman-registry), true)
+	docker kill bpfman-registry > /dev/null 2>&1; docker rm bpfman-registry > /dev/null 2>&1
+else
+	@echo "registry is already deleted"
+endif
 
 OPERATOR_SDK_DL_NAME=operator-sdk_$(shell go env GOOS)_$(shell go env GOARCH)
 OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/$(OPERATOR_SDK_VERSION)/$(OPERATOR_SDK_DL_NAME)
@@ -258,13 +276,13 @@ test-integration: ## Run Integration tests.
 	GOFLAGS="-tags=integration_tests" go test -race -v ./test/integration/...
 
 ## The physical bundle is no longer tracked in git since it should be considered
-## and treated as a release artifact, rather than something that's updated 
+## and treated as a release artifact, rather than something that's updated
 ## as part of a pull request.
 ## See https://github.com/operator-framework/operator-sdk/issues/6285.
 .PHONY: bundle
 bundle: operator-sdk generate kustomize manifests ## Generate bundle manifests and metadata, then validate generated files.
-	cd config/bpfman-operator-deployment && $(KUSTOMIZE) edit set image quay.io/bpfman/bpfman-operator=${BPFMAN_OPERATOR_IMG}
-	cd config/bpfman-deployment && $(KUSTOMIZE) edit set image quay.io/bpfman/bpfman=${BPFMAN_IMG} && $(KUSTOMIZE) edit set image quay.io/bpfman/bpfman-agent=${BPFMAN_AGENT_IMG}
+	cd config/bpfman-operator-deployment && $(KUSTOMIZE) edit set image $(REGISTRY)/bpfman-operator=${BPFMAN_OPERATOR_IMG}
+	cd config/bpfman-deployment && $(KUSTOMIZE) edit set image $(REGISTRY)/bpfman=${BPFMAN_IMG} && $(KUSTOMIZE) edit set image $(REGISTRY)/bpfman-agent=${BPFMAN_AGENT_IMG}
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
@@ -284,9 +302,9 @@ build: fmt ## Build bpfman-operator and bpfman-agent binaries.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: build-images
 build-images: ## Build bpfman, bpfman-agent, and bpfman-operator images.
-	docker build -t ${BPFMAN_OPERATOR_IMG} -f Containerfile.bpfman-operator ../
-	docker build -t ${BPFMAN_AGENT_IMG} -f Containerfile.bpfman-agent ../
-	DOCKER_BUILDKIT=1 docker build -t ${BPFMAN_IMG} -f ../Containerfile.bpfman.local ../
+	docker build $(NO-CACHE) -t ${BPFMAN_OPERATOR_IMG} -f Containerfile.bpfman-operator ../
+	docker build $(NO-CACHE) -t ${BPFMAN_AGENT_IMG} -f Containerfile.bpfman-agent ../
+	DOCKER_BUILDKIT=1 docker build $(NO-CACHE) -t ${BPFMAN_IMG} -f ../Containerfile.bpfman.local ../
 
 .PHONY: push-images
 push-images: ## Push bpfman, bpfman-agent, bpfman-operator images.
@@ -351,8 +369,8 @@ setup-kind: ## Setup Kind cluster
 ## Default deploy target is KIND based with its CSI driver initialized.
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy bpfman-operator to the K8s cluster specified in ~/.kube/config with the csi driver initialized.
-	cd config/bpfman-operator-deployment && $(KUSTOMIZE) edit set image quay.io/bpfman/bpfman-operator=${BPFMAN_OPERATOR_IMG}
-	cd config/bpfman-deployment && $(KUSTOMIZE) edit set image quay.io/bpfman/bpfman=${BPFMAN_IMG} && $(KUSTOMIZE) edit set image quay.io/bpfman/bpfman-agent=${BPFMAN_AGENT_IMG}
+	cd config/bpfman-operator-deployment && $(KUSTOMIZE) edit set image $(REGISTRY)/bpfman-operator=${BPFMAN_OPERATOR_IMG}
+	cd config/bpfman-deployment && $(KUSTOMIZE) edit set image $(REGISTRY)/bpfman=${BPFMAN_IMG} && $(KUSTOMIZE) edit set image $(REGISTRY)/bpfman-agent=${BPFMAN_AGENT_IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
@@ -371,8 +389,8 @@ run-on-kind: kustomize setup-kind build-images load-images-kind deploy ## Kind D
 
 .PHONY: deploy-openshift
 deploy-openshift: manifests kustomize ## Deploy bpfman-operator to the Openshift cluster specified in ~/.kube/config.
-	cd config/bpfman-operator-deployment && $(KUSTOMIZE) edit set image quay.io/bpfman/bpfman-operator=${BPFMAN_OPERATOR_IMG}
-	cd config/bpfman-deployment && $(KUSTOMIZE) edit set image quay.io/bpfman/bpfman=${BPFMAN_IMG} && $(KUSTOMIZE) edit set image quay.io/bpfman/bpfman-agent=${BPFMAN_AGENT_IMG}
+	cd config/bpfman-operator-deployment && $(KUSTOMIZE) edit set image l$(REGISTRY)/bpfman-operator=${BPFMAN_OPERATOR_IMG}
+	cd config/bpfman-deployment && $(KUSTOMIZE) edit set image $(REGISTRY)/bpfman=${BPFMAN_IMG} && $(KUSTOMIZE) edit set image $(REGISTRY)/bpfman-agent=${BPFMAN_AGENT_IMG}
 	$(KUSTOMIZE) build config/openshift | kubectl apply -f -
 
 .PHONY: undeploy-openshift

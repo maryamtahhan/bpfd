@@ -58,7 +58,7 @@ spec:
               mountPropagation: Bidirectional
       containers:
         - name: bpfman
-          image: quay.io/bpfman/bpfman:latest
+          image: localhost:5000/bpfman:latest
           args: [--csi-support]
           securityContext:
             privileged: true
@@ -98,8 +98,11 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
         - name: bpfman-agent
+          image: localhost:5000/bpfman-agent:latest
           command: [/bpfman-agent]
-          image: quay.io/bpfman/bpfman-agent:latest
+          args:
+            - "--health-probe-bind-address=:8091"
+            - "--metrics-bind-address=127.0.0.1:8090"
           imagePullPolicy: IfNotPresent
           env:
             - name: KUBE_NODE_NAME

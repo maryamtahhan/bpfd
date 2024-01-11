@@ -3,6 +3,6 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- name: quay.io/bpfman/bpfman-operator
-  newName: quay.io/bpfman/bpfman-operator
+- name: localhost:5000/bpfman-operator
+  newName: localhost:5000/bpfman-operator
   newTag: latest

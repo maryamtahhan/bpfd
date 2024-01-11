@@ -3,9 +3,9 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- name: quay.io/bpfman/bpfman
-  newName: quay.io/bpfman/bpfman
+- name: localhost:5000/bpfman
+  newName: localhost:5000/bpfman
   newTag: latest
-- name: quay.io/bpfman/bpfman-agent
-  newName: quay.io/bpfman/bpfman-agent
+- name: localhost:5000/bpfman-agent
+  newName: localhost:5000/bpfman-agent
   newTag: latest

@@ -184,3 +184,53 @@ The following is a brief description of the main directories and their contents.
   It uses the [kubernetes-testing-framework project](https://github.com/Kong/kubernetes-testing-framework) to
   programmatically spin-up all of the required infrastructure for our unit tests.
 - `Makefile`: Contains all of the make targets used to build, test, and generate code used by the bpfman-operator.
+
+
+## Troubleshooting
+
+### Metrics/Health port issues
+
+If the ports are already in use then you need to try to rebuild the bpfman images from scratch with the right ports
+
+```bash
+# kubectl describe pods -n bpfman bpfman-daemon-4cs8d
+
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  21s                default-scheduler  Successfully assigned bpfman/bpfman-daemon-4cs8d to wsfd-advnetlab47.anl.lab.eng.bos.redhat.com
+  Normal   Pulling    21s                kubelet            Pulling image "quay.io/fedora/fedora-minimal:latest"
+  Normal   Pulled     20s                kubelet            Successfully pulled image "quay.io/fedora/fedora-minimal:latest" in 207ms (207ms including waiting)
+  Normal   Created    20s                kubelet            Created container mount-bpffs
+  Normal   Started    20s                kubelet            Started container mount-bpffs
+  Normal   Pulling    19s                kubelet            Pulling image "quay.io/bpfman/bpfman:latest"
+  Normal   Started    17s                kubelet            Started container bpfman
+  Normal   Created    17s                kubelet            Created container bpfman
+  Normal   Pulled     17s                kubelet            Successfully pulled image "quay.io/bpfman/bpfman:latest" in 1.908s (1.908s including waiting)
+  Normal   Pulling    17s                kubelet            Pulling image "quay.io/bpfman/bpfman-agent:latest"
+  Normal   Pulled     14s                kubelet            Successfully pulled image "quay.io/bpfman/bpfman-agent:latest" in 2.977s (2.977s including waiting)
+  Normal   Pulling    14s                kubelet            Pulling image "quay.io/bpfman/csi-node-driver-registrar:v2.9.0"
+  Normal   Pulled     14s                kubelet            Successfully pulled image "quay.io/bpfman/csi-node-driver-registrar:v2.9.0" in 246ms (246ms including waiting)
+  Normal   Created    14s                kubelet            Created container node-driver-registrar
+  Normal   Started    14s                kubelet            Started container node-driver-registrar
+  Warning  BackOff    11s (x2 over 12s)  kubelet            Back-off restarting failed container bpfman-agent in pod bpfman-daemon-4cs8d_bpfman(b0e1ffb4-811e-4843-9c6a-5f050a39a8f3)
+  Normal   Created    0s (x3 over 14s)   kubelet            Created container bpfman-agent
+  Normal   Started    0s (x3 over 14s)   kubelet            Started container bpfman-agent
+  Normal   Pulled     0s (x2 over 13s)   kubelet            Container image "quay.io/bpfman/bpfman-agent:latest" already present on machine
+```
+
+```bash
+# cat /var/log/pods/bpfman_bpfman-daemon-4cs8d_b0e1ffb4-811e-4843-9c6a-5f050a39a8f3/bpfman-agent/3.log
+2024-01-11T04:11:06.859284438-05:00 stderr F {"level":"info","ts":"2024-01-11T09:11:06Z","logger":"controller-runtime.metrics","msg":"Metrics server is starting to listen","addr":":8080"}
+2024-01-11T04:11:06.859563984-05:00 stderr F {"level":"error","ts":"2024-01-11T09:11:06Z","logger":"setup","msg":"unable to start manager","error":"error listening on :8081: listen tcp :8081: bind: address already in use","stacktrace":"main.main\n\t/usr/src/bpfman/bpfman-operator/cmd/bpfman-agent/main.go:100\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:250"}
+```
+```
+
+The solution is to replace references to `quay.io/bpfman/bpfman*` in the configuration files with `localhost:5000/bpfman*`
+
+```bash
+# make local-registry
+# make REGISTRY=localhost:5000 NO-CACHE=--no-cache build-images
+# make REGISTRY=localhost:5000 push-images
+# make REGISTRY=localhost:5000 deploy
+```

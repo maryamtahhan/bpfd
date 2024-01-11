@@ -70,7 +70,7 @@ spec:
             - /bpfman-operator
           args:
             - --leader-elect
-          image: quay.io/bpfman/bpfman-operator:latest
+          image: localhost:5000/bpfman-operator:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: GO_LOG
@@ -84,13 +84,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8081
+              port: 8091
             initialDelaySeconds: 15
             periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 8081
+              port: 8091
             initialDelaySeconds: 5
             periodSeconds: 10
           # TODO(user): Configure the resources accordingly based on the project requirements.
